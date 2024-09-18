@@ -19,23 +19,6 @@
 
 set -e
 
-coveredpaths="\
-  pkg/instancetype \
-  pkg/libvmi \
-  pkg/network/admitter \
-  pkg/network/namescheme \
-  pkg/network/domainspec \
-  pkg/network/deviceinfo \
-  pkg/virtctl/credentials \
-  tests/console \
-  tests/libnet \
-  tests/libnode \
-  tests/libconfigmap \
-  tests/libpod \
-  tests/libvmifact \
-  tests/libsecret \
-  tests/libinstancetype \
-  tests/instancetype \
-  ${NULL}"
+source hack/coveredpaths.sh
+gofumpt -l -w -extra ${COVERED_PATHS}
 
-gofumpt -l -w -extra ${coveredpaths}
