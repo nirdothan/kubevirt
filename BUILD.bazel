@@ -666,6 +666,16 @@ genrule(
     executable = 1,
 )
 
+genrule(
+    name = "build-virt-chroot",
+    srcs = [
+        "//cmd/virt-chroot:virt-chroot",
+    ],
+    outs = ["virt-chroot"],
+    cmd = "echo '#!/bin/sh\n\ncp -f $(SRCS) $$1' > \"$@\"",
+    executable = 1,
+)
+
 filegroup(
     name = "coverage_files",
     srcs = glob(["bazel-out/k8-fastbuild/testlogs/**/coverage.dat"]),
