@@ -19,7 +19,7 @@
 
 set -e
 
-INTEG_TEST_IMAGE=${INTEG_TEST_IMAGE:-"quay.io/kubevirt/builder:2306271234-e00d9fcf9"}
+INTEG_TEST_IMAGE=${INTEG_TEST_IMAGE:-"quay.io/kubevirt/builder:2410030759-b1f6eca008"}
 PODMAN_SOCKET=${PODMAN_SOCKET:-"/run/podman/podman.sock"}
 
 detect_podman_socket() {
@@ -51,8 +51,8 @@ test -t 1 && USE_TTY="-it"
 # Unfortunately, `--cap-add NET_ADMIN` is not enough to replace `--privileged`.
 # Some of the /proc/sys/net fields are read-only:
 # open /proc/sys/net/ipv4/conf/testDummy99/route_localnet: read-only file system
-_cli="${_cri_bin} run --privileged --rm ${USE_TTY} ${gocachemount} -v ./:/workspace:Z -w /workspace ${INTEG_TEST_IMAGE}"
-
+_cli="${_cri_bin} run --privileged --rm ${USE_TTY} ${gocachemount} -v ./:/workspace:Z -w /workspace -e PATH=$PATH:/workspace/_out/cmd/virt-chroot ${INTEG_TEST_IMAGE}"
+echo "cli=${_cli}"
 $_cli go test -v \
     /workspace/pkg/network/driver/nmstate/... \
     --run-integration-tests \

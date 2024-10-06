@@ -93,6 +93,7 @@ fuzz:
 	hack/dockerized "./hack/fuzz.sh"
 
 integ-test:
+	hack/dockerized "./hack/build-virt-chroot.sh"
 	hack/integration-test.sh
 
 functest: build-functests
