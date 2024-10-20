@@ -100,7 +100,19 @@ func RunAndMonitor(containerDiskDir, uid string) (int, error) {
 	defer terminateIstioProxy()
 	args := removeArg(os.Args[1:], "--keep-after-failure")
 
-	cmd := exec.Command("/usr/bin/virt-launcher", args...)
+	// Run virt-launcher under dlv for debugging
+	dlvArgs := []string{
+		"--listen=:2346",
+		"--headless=true",
+		"--api-version=2",
+		"--accept-multiclient",
+		"--init", "config substitute-path / /home/ndothan/work/github.com/kubevirt/kubevirt",
+		"exec",
+		"/usr/bin/virt-launcher",
+		"--",
+	}
+	dlvArgs = append(dlvArgs, args...)
+	cmd := exec.Command("dlv", dlvArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		AmbientCaps: []uintptr{unix.CAP_NET_BIND_SERVICE},
 	}

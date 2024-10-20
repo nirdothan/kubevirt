@@ -472,6 +472,24 @@ func (t *TemplateService) renderLaunchManifest(vmi *v1.VirtualMachineInstance, i
 		},
 	})
 
+	// Debug: remove restrictions and allow full privileges
+	compute.SecurityContext = &k8sv1.SecurityContext{
+		Privileged:               pointer.P(true),
+		AllowPrivilegeEscalation: pointer.P(true),
+		RunAsUser:                pointer.P(int64(0)),
+		RunAsNonRoot:             pointer.P(false),
+		SeccompProfile: &k8sv1.SeccompProfile{
+			Type: k8sv1.SeccompProfileTypeUnconfined,
+		},
+		Capabilities: &k8sv1.Capabilities{
+			Add: []k8sv1.Capability{"ALL"},
+		},
+	}
+
+	// Remove probes from compute container for debugging (similar to patch-virt-controller-debug.sh)
+	compute.ReadinessProbe = nil
+	compute.LivenessProbe = nil
+
 	// Make sure the compute container is always the first since the mutating webhook shipped with the sriov operator
 	// for adding the requested resources to the pod will add them to the first container of the list
 	containers := []k8sv1.Container{compute}
@@ -843,8 +861,15 @@ func (t *TemplateService) newContainerSpecRenderer(vmi *v1.VirtualMachineInstanc
 	}
 
 	const computeContainerName = "compute"
+	// Override with debug image for debugging
+	// Extract base image (without tag) and append :debug
+	baseImage := t.launcherImage
+	if idx := strings.LastIndex(baseImage, ":"); idx != -1 {
+		baseImage = baseImage[:idx]
+	}
+	debugImage := baseImage + ":debug"
 	containerRenderer := NewContainerSpecRenderer(
-		computeContainerName, t.launcherImage, t.clusterConfig.GetImagePullPolicy(), computeContainerOpts...)
+		computeContainerName, debugImage, t.clusterConfig.GetImagePullPolicy(), computeContainerOpts...)
 	return containerRenderer
 }
 

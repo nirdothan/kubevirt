@@ -63,6 +63,13 @@ if [[ "${ARCHITECTURE}" != "s390x" && "${ARCHITECTURE}" != "crossbuild-s390x" ]]
 fi
 
 PUSH_TARGETS=(${PUSH_TARGETS:-${default_targets}})
+target=virt-launcher
+tag=debug
+bazel run \
+    --config=${ARCHITECTURE} \
+    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+    --strip=never \
+    //:push-${target} -- --repository ${docker_prefix}/${image_prefix}${target} --tag ${tag}
 
 for tag in ${docker_tag} ${docker_tag_alt}; do
     for target in ${PUSH_TARGETS[@]}; do

@@ -22,6 +22,23 @@ source hack/common.sh
 source hack/bootstrap.sh
 source hack/config.sh
 
+#bazel build \
+#    --config=${ARCHITECTURE} \
+#    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+#    --strip=never \
+#    --define container_prefix= \
+#    --define image_prefix= \
+#    --define container_tag= \
+#    //cmd/virt-controller:virt-controller-image
+
+#bazel run \
+#    --config=${ARCHITECTURE} \
+#    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+#    --strip=never \
+#    --define container_prefix=${docker_prefix} \
+#    --define image_prefix=${image_prefix} \
+#    --define container_tag=debug \
+#    //:push-virt-controller
 
 bazel build \
     --config=${ARCHITECTURE} \
@@ -30,13 +47,30 @@ bazel build \
     --define container_prefix= \
     --define image_prefix= \
     --define container_tag= \
-    //cmd/virt-controller:virt-controller-image
+    //cmd/virt-launcher-monitor
 
+bazel build \
+    --config=${ARCHITECTURE} \
+    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+    --strip=never \
+    --define container_prefix= \
+    --define image_prefix= \
+    --define container_tag= \
+    //cmd/virt-launcher:virt-launcher-image
+
+target=virt-launcher
+tag=debug
 bazel run \
     --config=${ARCHITECTURE} \
     --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
     --strip=never \
-    --define container_prefix=${docker_prefix} \
-    --define image_prefix=${image_prefix} \
-    --define container_tag=debug \
-    //:push-virt-controller
+    //:push-${target} -- --repository ${docker_prefix}/${image_prefix}${target} --tag ${tag}
+
+#bazel run \
+#    --config=${ARCHITECTURE} \
+#    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+#    --strip=never \
+#    --define container_prefix=${docker_prefix} \
+#    --define image_prefix=${image_prefix} \
+#    --define container_tag=debug \
+#    //:push-virt-launcher
