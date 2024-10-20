@@ -23,14 +23,14 @@ source hack/bootstrap.sh
 source hack/config.sh
 
 
-bazel build \
-    --config=${ARCHITECTURE} \
-    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
-    --strip=never \
-    --define container_prefix= \
-    --define image_prefix= \
-    --define container_tag= \
-    //cmd/virt-controller:virt-controller
+#bazel build \
+#    --config=${ARCHITECTURE} \
+#    --@io_bazel_rules_go//go/config:gc_goopts=-N,-l \
+#    --strip=never \
+#    --define container_prefix= \
+#    --define image_prefix= \
+#    --define container_tag= \
+#    //cmd/virt-controller:virt-controller
 
 bazel build \
     --config=${ARCHITECTURE} \
