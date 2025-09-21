@@ -66,6 +66,17 @@ pkg_tar(
     package_dir = "/usr/bin",
 )
 
+
+pkg_tar(
+    name = "past-script-tar",
+    srcs = [
+        "passt",
+    ],
+    package_dir = "/usr/local/bin",
+)
+
+
+
 xattrs(
     name = "setcaps",
     capabilities = {
@@ -199,6 +210,7 @@ container_image(
             ":qemu-hook-tar",
             ":qemu-kvm-modules-dir-tar",
             "//rpm:launcherbase_x86_64",
+            ":past-script-tar",
         ],
     }),
 )
