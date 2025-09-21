@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-
 	backendstorage "kubevirt.io/kubevirt/pkg/storage/backend-storage"
 	"kubevirt.io/kubevirt/pkg/tpm"
 
@@ -26,6 +25,8 @@ import (
 	"kubevirt.io/kubevirt/pkg/virtiofs"
 	"kubevirt.io/kubevirt/pkg/vmitrait"
 )
+
+const debugVolume = "debug-vol"
 
 type VolumeRendererOption func(renderer *VolumeRenderer) error
 
@@ -74,6 +75,7 @@ func (vr *VolumeRenderer) Mounts() []k8sv1.VolumeMount {
 		mountPath("ephemeral-disks", vr.ephemeralDiskDir),
 		mountPath("libvirt-runtime", "/var/run/libvirt"),
 		mountPath("sockets", filepath.Join(vr.virtShareDir, "sockets")),
+		mountPath(debugVolume, "/debug"),
 	}
 	if !vr.useImageVolumes {
 		volumeMounts = append(volumeMounts, mountPathWithPropagation(containerDisks, vr.containerDiskDir, k8sv1.MountPropagationHostToContainer))
@@ -89,6 +91,15 @@ func (vr *VolumeRenderer) Volumes() []k8sv1.Volume {
 		emptyDirVolume(virtBinDir),
 		emptyDirVolume("libvirt-runtime"),
 		emptyDirVolume("ephemeral-disks"),
+		{
+			Name: debugVolume,
+			VolumeSource: k8sv1.VolumeSource{
+				HostPath: &k8sv1.HostPathVolumeSource{
+					Path: "/tmp/debug/",
+					Type: &([]k8sv1.HostPathType{k8sv1.HostPathDirectoryOrCreate})[0],
+				},
+			},
+		},
 	}
 	if !vr.useImageVolumes {
 		volumes = append(volumes, emptyDirVolume(containerDisks))
