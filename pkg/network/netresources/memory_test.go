@@ -199,6 +199,13 @@ var _ = Describe("Network Binding plugin compute resource overhead", func() {
 			},
 			resource.MustParse("500Mi"),
 		),
+		Entry("when vmi has passt binding",
+			libvmi.New(
+				libvmi.WithInterface(libvmi.InterfaceDeviceWithPasstBinding("")),
+			),
+			map[string]v1.InterfaceBindingPlugin{},
+			resource.MustParse("250Mi"),
+		),
 	)
 })
 
