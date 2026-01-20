@@ -25,8 +25,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	v1 "kubevirt.io/api/core/v1"
+
+	"kubevirt.io/kubevirt/pkg/network/vmispec"
 )
 
+const passtBindingOverhead = "250Mi" // passt binary overhead if all ports are forwarded
 type MemoryCalculator struct {
 	resource.Quantity
 }
@@ -40,6 +43,14 @@ func (mc *MemoryCalculator) Calculate(
 	registeredPlugins map[string]v1.InterfaceBindingPlugin,
 ) resource.Quantity {
 	mc.Quantity = resource.Quantity{}
+
+	hasPasstBinding := vmispec.HasIfaceOfFunc(vmi.Spec.Domain.Devices.Interfaces, func(iface v1.Interface) bool {
+		return iface.PasstBinding != nil
+	})
+
+	if hasPasstBinding {
+		mc.addPasstMemoryRequests()
+	}
 
 	mc.sumPluginsMemoryRequests(
 		filterUniquePlugins(vmi.Spec.Domain.Devices.Interfaces, registeredPlugins),
@@ -61,6 +72,10 @@ func (mc *MemoryCalculator) sumPluginsMemoryRequests(uniquePlugins []v1.Interfac
 
 		mc.Add(requests[k8scorev1.ResourceMemory])
 	}
+}
+
+func (mc *MemoryCalculator) addPasstMemoryRequests() {
+	mc.Add(resource.MustParse(passtBindingOverhead))
 }
 
 func filterUniquePlugins(interfaces []v1.Interface, registeredPlugins map[string]v1.InterfaceBindingPlugin) []v1.InterfaceBindingPlugin {
