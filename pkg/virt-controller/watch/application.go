@@ -37,6 +37,7 @@ import (
 
 	clone "kubevirt.io/api/clone/v1beta1"
 
+	netresources "kubevirt.io/kubevirt/pkg/network/resources"
 	clonecontroller "kubevirt.io/kubevirt/pkg/virt-controller/watch/clone"
 	"kubevirt.io/kubevirt/pkg/virt-controller/watch/migration"
 	"kubevirt.io/kubevirt/pkg/virt-controller/watch/node"
@@ -695,7 +696,7 @@ func (vca *VirtControllerApp) initCommon() {
 				return hooks.UnmarshalHookSidecarList(vmi)
 			}),
 		services.WithSidecarCreator(netbinding.NetBindingPluginSidecarList),
-		services.WithNetBindingPluginMemoryCalculator(netbinding.MemoryCalculator{}),
+		services.WithNetBindingPluginMemoryCalculator(netresources.NewMemoryCalculator()),
 		services.WithAnnotationsGenerators(netAnnotationsGenerator, storageannotations.Generator{}),
 		services.WithNetTargetAnnotationsGenerator(netAnnotationsGenerator),
 	)

@@ -34,6 +34,7 @@ import (
 	flag "github.com/spf13/pflag"
 	k8sv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
+
 	"libvirt.org/go/libvirtxml"
 
 	"kubevirt.io/kubevirt/pkg/virt-handler/ksm"
@@ -68,8 +69,8 @@ import (
 	metrics "kubevirt.io/kubevirt/pkg/monitoring/metrics/virt-handler"
 	metricshandler "kubevirt.io/kubevirt/pkg/monitoring/metrics/virt-handler/handler"
 	"kubevirt.io/kubevirt/pkg/monitoring/profiler"
-	"kubevirt.io/kubevirt/pkg/network/netbinding"
 	"kubevirt.io/kubevirt/pkg/network/passt"
+	netresources "kubevirt.io/kubevirt/pkg/network/resources"
 	netsetup "kubevirt.io/kubevirt/pkg/network/setup"
 	"kubevirt.io/kubevirt/pkg/service"
 	"kubevirt.io/kubevirt/pkg/util"
@@ -407,7 +408,7 @@ func (app *virtHandlerApp) Run() {
 		&capabilities,
 		netConf,
 		netStat,
-		netbinding.MemoryCalculator{},
+		netresources.NewMemoryCalculator(),
 		passtRepairHandler,
 	)
 	if err != nil {
