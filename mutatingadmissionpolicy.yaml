@@ -1,0 +1,50 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  annotations:
+  name: sidecar-policy.example.com
+spec:
+  failurePolicy: Fail
+  matchConditions:
+  - expression: object.spec.containers.exists(c, c.name == "hook-sidecar-0")
+    name: has-hook-sidecar
+  - expression: object.spec.containers.exists(c, c.name == "compute" && has(c.resources.claims))
+    name: has-compute-with-claims
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+    - apiGroups:
+      - ""
+      apiVersions:
+      - v1
+      operations:
+      - CREATE
+      resources:
+      - pods
+      scope: '*'
+  mutations:
+  - jsonPatch:
+      expression: |
+        [
+          JSONPatch{
+            op: "replace",
+            path: "/spec/containers/" + string(object.spec.containers.map(c, c.name).indexOf("hook-sidecar-0")) + "/resources",
+            value: Object.spec.containers.resources{
+              claims: object.spec.containers.filter(c, c.name == "compute")[0].resources.claims
+            }
+          }
+        ]
+    patchType: JSONPatch
+  reinvocationPolicy: IfNeeded
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: add-claim-to-sidecar-binding
+spec:
+  policyName: sidecar-policy.example.com
+  matchResources:
+    namespaceSelector: {}
+

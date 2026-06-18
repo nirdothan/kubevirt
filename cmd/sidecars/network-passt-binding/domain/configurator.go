@@ -21,6 +21,9 @@ package domain
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"slices"
 	"strings"
 
 	vmschema "kubevirt.io/api/core/v1"
@@ -60,31 +63,37 @@ func NewPasstNetworkConfigurator(
 	ifaceStatuses []vmschema.VirtualMachineInstanceNetworkInterface,
 	opts NetworkConfiguratorOptions,
 ) (*PasstNetworkConfigurator, error) {
-	network := vmispec.LookupPodNetwork(networks)
-	if network == nil {
-		return nil, fmt.Errorf("pod network not found")
+	draNetIdx := slices.IndexFunc(networks, func(network vmschema.Network) bool {
+		return vmispec.IsDRANetwork(network)
+	})
+	if draNetIdx == -1 {
+		return nil, fmt.Errorf("dra network not found")
 	}
+
+	network := networks[draNetIdx]
+	fmt.Printf("DEBUG: network = %v\n", network.Name)
+
 	iface := vmispec.LookupInterfaceByName(ifaces, network.Name)
 	if iface == nil {
 		return nil, fmt.Errorf("no interface found")
 	}
-	if iface.Binding == nil || iface.Binding != nil && iface.Binding.Name != PasstPluginName {
-		return nil, fmt.Errorf("interface %q is not set with Passt network binding plugin", network.Name)
-	}
+	//if iface.Binding == nil || iface.Binding != nil && iface.Binding.Name != PasstPluginName {
+	//	return nil, fmt.Errorf("interface %q is not set with Passt network binding plugin", network.Name)
+	//}
+	//
+	//ifaceStatus := vmispec.LookupInterfaceStatusByName(ifaceStatuses, network.Name)
+	//if ifaceStatus == nil {
+	//	return nil, fmt.Errorf("primary network interface status was not found")
+	//}
 
-	ifaceStatus := vmispec.LookupInterfaceStatusByName(ifaceStatuses, network.Name)
-	if ifaceStatus == nil {
-		return nil, fmt.Errorf("primary network interface status was not found")
-	}
-
-	primaryPodIfaceName := ifaceStatus.PodInterfaceName
-	if primaryPodIfaceName == "" {
-		return nil, fmt.Errorf("primary pod network interface name was not found")
-	}
+	//primaryPodIfaceName := ifaceStatus.PodInterfaceName
+	//if primaryPodIfaceName == "" {
+	//	return nil, fmt.Errorf("primary pod network interface name was not found")
+	//}
 
 	return &PasstNetworkConfigurator{
 		vmiSpecIface: iface,
-		podIfaceName: primaryPodIfaceName,
+		podIfaceName: "eth0",
 		options:      opts,
 	}, nil
 }
@@ -178,6 +187,15 @@ func (p PasstNetworkConfigurator) generateInterface() (*domainschema.Interface, 
 		acpi = &domainschema.ACPI{Index: uint(acpiIndex)}
 	}
 
+	var passtLogFile string
+	kubevirtNetworkDir, ok := os.LookupEnv("KUBEVIRT_HOSTPATH_MOUNTPOINT")
+	if !ok {
+		passtLogFile = PasstLogFilePath
+	} else {
+		passtLogFile = path.Join(kubevirtNetworkDir, "passt-dra.log")
+	}
+	log.Log.Infof("passt log file path: %+v", passtLogFile)
+
 	const (
 		ifaceTypeVhostUser = "vhostuser"
 		ifaceBackendPasst  = "passt"
@@ -190,7 +208,7 @@ func (p PasstNetworkConfigurator) generateInterface() (*domainschema.Interface, 
 		ACPI:        acpi,
 		Type:        ifaceTypeVhostUser,
 		Source:      domainschema.InterfaceSource{Device: p.podIfaceName},
-		Backend:     &domainschema.InterfaceBackend{Type: ifaceBackendPasst, LogFile: PasstLogFilePath},
+		Backend:     &domainschema.InterfaceBackend{Type: ifaceBackendPasst, LogFile: passtLogFile},
 		PortForward: p.generatePortForward(),
 	}, nil
 }
