@@ -36,10 +36,7 @@ import (
 	"kubevirt.io/kubevirt/cmd/test-helpers/dra-test-driver/pkg/driver"
 )
 
-const (
-	driverName = "hostpath.dra.kubevirt.io"
-	maxDevices = 5
-)
+const maxDevices = 5
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -60,7 +57,7 @@ func main() {
 
 	d := &driver.Driver{}
 	helper, err := kubeletplugin.Start(ctx, d,
-		kubeletplugin.DriverName(driverName),
+		kubeletplugin.DriverName(driver.DriverName),
 		kubeletplugin.KubeClient(clientset),
 		kubeletplugin.NodeName(nodeName),
 	)
@@ -69,7 +66,7 @@ func main() {
 	}
 
 	var devices []resourceapi.Device
-	for index := 0; index < maxDevices; index++ {
+	for index := range maxDevices {
 		devices = append(devices, resourceapi.Device{
 			Name: fmt.Sprintf("hostpath-%d", index),
 		})

@@ -29,18 +29,32 @@ import (
 	"k8s.io/dynamic-resource-allocation/kubeletplugin"
 )
 
-type Driver struct{}
+const DriverName = "hostpath.dra.kubevirt.io"
+
+type Driver struct {
+	hostPath     string
+	opaqueParams map[string]string
+}
 
 func (d *Driver) PrepareResourceClaims(ctx context.Context, claims []*resourceapi.ResourceClaim) (map[types.UID]kubeletplugin.PrepareResult, error) {
 	results := make(map[types.UID]kubeletplugin.PrepareResult)
 	for _, claim := range claims {
-		cdiDeviceID, err := prepareHostpath(claim.Name)
+		opaqueParams, err := getOpaqueParams(claim, DriverName)
+		if err != nil {
+			return nil, err
+		}
+		d.opaqueParams = opaqueParams
+		log.Printf("driver parameters: %+v\n", opaqueParams)
+
+		cdiDeviceID, err := d.prepareHostpath(claim.Name)
 		if err != nil {
 			results[claim.UID] = kubeletplugin.PrepareResult{
 				Err: fmt.Errorf("failed to prepare claim %s: %w", claim.Name, err),
 			}
 			continue
 		}
+
+		err = d.executeBackendDevice(ctx)
 
 		var devices []kubeletplugin.Device
 		for _, result := range claim.Status.Allocation.Devices.Results {

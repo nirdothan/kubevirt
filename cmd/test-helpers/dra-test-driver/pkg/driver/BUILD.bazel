@@ -5,6 +5,8 @@ go_library(
     srcs = [
         "driver.go",
         "hostpath.go",
+        "params.go",
+        "passt.go",
     ],
     importpath = "kubevirt.io/kubevirt/cmd/test-helpers/dra-test-driver/pkg/driver",
     visibility = ["//visibility:public"],
