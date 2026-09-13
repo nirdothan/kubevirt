@@ -40,20 +40,21 @@ const (
 	qemuGID       = 107
 )
 
-func prepareHostpath(claimName string) (string, error) {
-	path := filepath.Join(baseDir, claimName)
-	if err := os.MkdirAll(path, 0o755); err != nil {
-		return "", fmt.Errorf("failed to create directory %s: %w", path, err)
-	}
-	if err := os.Chown(path, qemuUID, qemuGID); err != nil {
-		return "", fmt.Errorf("failed to chown %s: %w", path, err)
-	}
-	if err := selinux.SetFileLabel(path, "system_u:object_r:container_file_t:s0"); err != nil {
-		return "", fmt.Errorf("failed to set SELinux label on %s: %w", path, err)
-	}
-	log.Printf("Created directory: %s", path)
+func (d *Driver) prepareHostpath(claimName string) (string, error) {
 
-	return createCDISpec(claimName, path)
+	d.hostPath = filepath.Join(baseDir, claimName)
+	if err := os.MkdirAll(d.hostPath, 0o755); err != nil {
+		return "", fmt.Errorf("failed to create directory %s: %w", d.hostPath, err)
+	}
+	if err := os.Chown(d.hostPath, qemuUID, qemuGID); err != nil {
+		return "", fmt.Errorf("failed to chown %s: %w", d.hostPath, err)
+	}
+	if err := selinux.SetFileLabel(d.hostPath, "system_u:object_r:container_file_t:s0"); err != nil {
+		return "", fmt.Errorf("failed to set SELinux label on %s: %w", d.hostPath, err)
+	}
+	log.Printf("Created directory: %s", d.hostPath)
+
+	return createCDISpec(claimName, d.hostPath)
 }
 
 func createCDISpec(claimName, path string) (string, error) {
